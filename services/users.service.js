@@ -59,13 +59,13 @@ module.exports = {
 				if (entity.username) {
 					const found = await this.adapter.findOne({ username: entity.username });
 					if (found)
-						throw new MoleculerClientError("Username is exist!", 422, "", [{ field: "username", message: "is exist" }]);
+						throw new MoleculerClientError("Username is existent!", 422, "", [{ field: "username", message: "is exist" }]);
 				}
 
 				if (entity.email) {
 					const found = await this.adapter.findOne({ email: entity.email });
 					if (found)
-						throw new MoleculerClientError("Email is exist!", 422, "", [{ field: "email", message: "is exist" }]);
+						throw new MoleculerClientError("Email is existent!", 422, "", [{ field: "email", message: "is exist" }]);
 				}
 
 				entity.password = bcrypt.hashSync(entity.password, 10);
@@ -196,18 +196,22 @@ module.exports = {
 			},
 			async handler(ctx) {
 				const newData = ctx.params.user;
+				await this.seedD
 				if (newData.username) {
 					const found = await this.adapter.findOne({ username: newData.username });
 					if (found && found._id.toString() !== ctx.meta.user._id.toString())
-						throw new MoleculerClientError("Username is exist!", 422, "", [{ field: "username", message: "is exist" }]);
+						throw new MoleculerClientError("Username is existent!", 422, "", [{ field: "username", message: "is existent" }]);
 				}
 
 				if (newData.email) {
 					const found = await this.adapter.findOne({ email: newData.email });
 					if (found && found._id.toString() !== ctx.meta.user._id.toString())
-						throw new MoleculerClientError("Email is exist!", 422, "", [{ field: "email", message: "is exist" }]);
+						throw new MoleculerClientError("Email is existent!", 422, "", [{ field: "email", message: "is existent" }]);
 				}
 				newData.updatedAt = new Date();
+				if (newData.password) {
+					newData.password = bcrypt.hashSync(newData.password, 10);
+				}
 				const update = {
 					"$set": newData
 				};

@@ -1,6 +1,8 @@
 "use strict";
 
+const _ = require("lodash");
 const ApiGateway = require("moleculer-web");
+const { UnAuthorizedError } = ApiGateway.Errors;
 
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
@@ -41,7 +43,7 @@ module.exports = {
 				authentication: false,
 
 				// Enable authorization. Implement the logic into `authorize` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
-				authorization: false,
+				authorization: true,
 
 				// The auto-alias feature allows you to declare your route alias directly in your services.
 				// The gateway will dynamically build the full routes from service schema.
@@ -58,11 +60,12 @@ module.exports = {
 				 * @param {IncomingRequest} req 
 				 * @param {ServerResponse} res 
 				 * @param {Object} data
-				 * 
+				 */ 
 				onBeforeCall(ctx, route, req, res) {
 					// Set request headers to context meta
-					ctx.meta.userAgent = req.headers["user-agent"];
-				}, */
+					//ctx.meta.userAgent = req.headers["user-agent"];
+					//console.log(req)
+				},
 
 				/**
 				 * After call hook. You can modify the data.
@@ -131,7 +134,35 @@ module.exports = {
 		 */
 		async authenticate(ctx, route, req) {
 			// Read the token from header
-			const auth = req.headers["authorization"];
+			let token;
+			if (req.headers.authorization) {
+				let type = req.headers.authorization.split(" ")[0];
+				if (type === "Token" || type === "Bearer")
+					token = req.headers.authorization.split(" ")[1];
+			}
+
+			let user;
+
+			if (token) {
+				// Verify JWT token
+				try {
+					user = await ctx.call("users.resolveToken", { token });
+					if (user) {
+						this.logger.info("Authenticated via JWT: ", user.username);
+						// Reduce user fields (it will be transferred to other nodes)
+						ctx.meta.user = _.pick(user, ["_id", "username", "email", "image"]);
+						ctx.meta.token = token;
+						ctx.meta.userID = user._id;
+					} else {
+						// Invalid token
+						throw new ApiGateway.Errors.UnAuthorizedError(ApiGateway.Errors.ERR_INVALID_TOKEN);
+					}
+				} catch (err) {
+					// Ignored because we continue processing if user doesn't exists
+				}
+			}
+
+			/*const auth = req.headers["authorization"];
 
 			if (auth && auth.startsWith("Bearer")) {
 				const token = auth.slice(7);
@@ -150,7 +181,7 @@ module.exports = {
 				// No token. Throw an error or do nothing if anonymous access is allowed.
 				// throw new E.UnAuthorizedError(E.ERR_NO_TOKEN);
 				return null;
-			}
+			}*/
 		},
 
 		/**
@@ -164,13 +195,34 @@ module.exports = {
 		 * @returns {Promise}
 		 */
 		async authorize(ctx, route, req) {
-			// Get the authenticated user.
-			const user = ctx.meta.user;
-
-			// It check the `auth` property in action schema.
-			if (req.$action.auth == "required" && !user) {
-				throw new ApiGateway.Errors.UnAuthorizedError("NO_RIGHTS");
+			let token;
+			if (req.headers.authorization) {
+				let type = req.headers.authorization.split(" ")[0];
+				if (type === "Token" || type === "Bearer")
+					token = req.headers.authorization.split(" ")[1];
 			}
+
+			let user;
+			if (token) {
+				// Verify JWT token
+				try {
+					user = await ctx.call("users.resolveToken", { token });
+					if (user) {
+						this.logger.info("Authorized via JWT: ", user.username);
+						// Reduce user fields (it will be transferred to other nodes)
+						ctx.meta.user = _.pick(user, ["_id", "username", "email", "image"]);
+						ctx.meta.token = token;
+						ctx.meta.userID = user._id;
+					}
+				} catch (err) {
+					// Ignored because we continue processing if user doesn't exists
+					this.logger.info(" ******** err catch **********");
+					this.logger.info(err);
+				}
+			}
+
+			if (req.$action.auth == "required" && !user)
+				throw new UnAuthorizedError();
 		}
 
 	}

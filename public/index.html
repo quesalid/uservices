@@ -397,7 +397,7 @@
 							<div class="request">
 								<h4>Request:</h4>
 								<code>{{ item.method || 'GET' }} <a target="_blank" :href="item.rest">{{ item.rest }}   </a></code>
-								<a class="button" @click="callAction(item)">
+								<a class="button" @click="callAction(item,'user')">
 									<i class="fa fa-rocket"></i>
 									Execute
 								</a>
@@ -511,6 +511,7 @@
 		</footer>
 	</div>
 	<script type="text/javascript">
+		var token = ''
 		var app = new Vue({
 			el: "#app",
 
@@ -518,7 +519,6 @@
 				return {
 					menu: [
 						{ id: "home", caption: "Home" },
-						{ id: "greeter", caption: "Greeter service" },
 						{ id: "users", caption: "Users service" },
 						{ id: "nodes", caption: "Nodes" },
 						{ id: "services", caption: "Services" }
@@ -526,56 +526,61 @@
 					page: "home",
 
 					requests: {
-						greeter: [
-							{ id: "hello", action: "greeter.hello", rest: "/api/greeter/hello", response: null, status: null, duration: null },
-
-							{ id: "welcome", action: "greeter.welcome", rest: "/api/greeter/welcome", fields: [
-								{ field: "name", label: "Name", type: "text", paramType: "param", model: "welcomeName" }
-							], response: null, status: null, duration: null }
-						],
 						users: [
 							{ id: "list", action: "users.list", rest: "/api/users/", response: null, status: null, duration: null, afterResponse: response => !this.fields.productID && (this.fields.userdID = response.rows[0]._id) },
 
 							{ id: "create", action: "users.create", rest: "/api/users/", method: "POST", fields: [
-								{ field: "name", label: "User Name", type: "text", paramType: "body", model: "userName" },
-								{ field: "email", label: "Email", type: "text", paramType: "body", model: "userEmail" },
-								{ field: "password", label: "Password", type: "password", paramType: "body", model: "userPassword" },
-							], response: null, status: null, duration: null, afterResponse: response => this.fields.productID = response._id  },
+								{ field: "username", label: "User Name", type: "text", paramType: "body", model: "username" },
+								{ field: "email", label: "Email", type: "text", paramType: "body", model: "email" },
+								{ field: "password", label: "Password", type: "password", paramType: "body", model: "password" },
+								{ field: "bio", label: "Biography", type: "textarea", paramType: "body", model: "bio" },
+							], response: null, status: null, duration: null, afterResponse: response => this.fields.userID = response._id  },
 
 							{ id: "get", action: "users.get", rest: "/api/users/:id", method: "GET", fields: [
-								{ field: "id", label: "ID", type: "text", paramType: "url", model: "userID" }
+								{ field: "id", label: "ID", type: "text", paramType: "url", model: "_id" }
 							], response: null, status: null, duration: null },
 
-							{ id: "update", action: "products.update", rest: "/api/products/:id", method: "PUT", fields: [
-								{ field: "id", label: "ID", type: "text", paramType: "url", model: "productID" },
-								{ field: "name", label: "Name", type: "text", paramType: "body", model: "productName" },
-								{ field: "price", label: "Price", type: "number", paramType: "body", model: "productPrice" },
+							{
+								id: "update", action: "users.update", rest: "/api/users/:id", method: "PUT", fields: [
+								{ field: "id", label: "ID", type: "text", paramType: "url", model: "_id" },
+								{ field: "username", label: "User Name", type: "text", paramType: "body", model: "username" },
+								{ field: "email", label: "Email", type: "text", paramType: "body", model: "email" },
+								{ field: "password", label: "Password", type: "password", paramType: "body", model: "password" },
+								{ field: "bio", label: "Biography", type: "textarea", paramType: "body", model: "bio" },
+								], response: null, status: null, duration: null
+							},
+
+							{
+								id: "updateme", action: "users.updateme", rest: "/api/user", method: "PUT", fields: [
+									{ field: "username", label: "User Name", type: "text", paramType: "body", model: "username" },
+									{ field: "email", label: "Email", type: "text", paramType: "body", model: "email" },
+									{ field: "password", label: "Password", type: "password", paramType: "body", model: "password" },
+									{ field: "bio", label: "Biography", type: "textarea", paramType: "body", model: "bio" },
+								], response: null, status: null, duration: null
+							},
+
+							{ id: "delete", action: "users.delete", rest: "/api/users/:id", method: "DELETE", fields: [
+								{ field: "id", label: "ID", type: "text", paramType: "url", model: "_id" }
 							], response: null, status: null, duration: null },
 
-							{ id: "increase", action: "products.increaseQuantity", rest: "/api/products/:id/quantity/increase", method: "PUT", fields: [
-								{ field: "id", label: "ID", type: "text", paramType: "url", model: "productID" },
-								{ field: "value", label: "Value", type: "number", paramType: "body", model: "productValue" },
-							], response: null, status: null, duration: null },
-
-							{ id: "decrease", action: "products.decreaseQuantity", rest: "/api/products/:id/quantity/decrease", method: "PUT", fields: [
-								{ field: "id", label: "ID", type: "text", paramType: "url", model: "productID" },
-								{ field: "value", label: "Value", type: "number", paramType: "body", model: "productValue" },
-							], response: null, status: null, duration: null },
-
-							{ id: "delete", action: "products.delete", rest: "/api/products/:id", method: "DELETE", fields: [
-								{ field: "id", label: "ID", type: "text", paramType: "url", model: "productID" }
-							], response: null, status: null, duration: null },
-
+							{ id: "login", action: "users.login", rest: "/api/users/login", method: "POST", fields: [
+								{ field: "email", label: "Email", type: "text", paramType: "body", model: "email" },
+								{ field: "password", label: "Password", type: "password", paramType: "body", model: "password" }
+							], response: null, status: null, duration: null
+							},
+							{
+								id: "me", action: "users.me", rest: "/api/user", method: "GET", fields: [
+								], response: null, status: null, duration: null
+							},
 						]
 					},
 
 					fields: {
-						welcomeName: "John",
-						userID: null,
-						userName: "Guest",
-						userEmail: null,
-						userPassword: null,
-						userBio: null
+						_id: null,
+						username: "Guest",
+						email: null,
+						password: null,
+						bio: null
 					},
 
 					broker: null,
@@ -648,7 +653,7 @@
 					return "";
 				},
 
-				callAction: function (item) {
+				callAction: function (item,obj) {
 					var startTime = Date.now();
 
 					let url = item.rest;
@@ -656,17 +661,32 @@
 					let body = null;
 					let params = null;
 					if (item.fields) {
-						body = {};
+						body = {}
+						body[obj] = {}
+						/*if (obj == 'user')
+							body = {
+								user: {}
+							}
+						else
+							body = {}*/
 						params = {};
 						item.fields.forEach(field => {
 							const value = this.getFieldValue(field);
 							if (field.paramType == "body")
-								body[field.field] = value;
+								body[obj][field.field]=value
+								/*if (obj == 'user') {
+									body.user[field.field] = value;
+								}
+								else
+									body[field.field] = value;*/
 							else if (field.paramType == "param")
 								params[field.field] = value;
-							else if (field.paramType == "url")
+							else if (field.paramType == "url") {
 								url = url.replace(":" + field.field, value);
+							}
 						});
+
+						//console.log(body)
 
 						if (body && method == "GET") {
 							body = null;
@@ -680,13 +700,17 @@
 						method,
 						body: body ? JSON.stringify(body) : null,
 					    headers: {
-							'Content-Type': 'application/json'
-						}
+							'Content-Type': 'application/json',
+							'Authorization': ' Bearer '+token						}
 						}).then(function(res) {
 							item.status = res.status;
 							item.duration = Date.now() - startTime;
 							return res.json().then(json => {
 								item.response = json;
+								if (item.action == 'users.login') {
+									token = json.user.token
+									console.log(token)
+								}
 								if (item.afterResponse)
 									return item.afterResponse(json);
 							});
