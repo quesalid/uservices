@@ -4,7 +4,7 @@ const { ServiceBroker, Context } = require("moleculer");
 const { ValidationError } = require("moleculer").Errors;
 const TestService = require("../../services/products.service");
 
-describe("Test 'products' service", () => {
+describe("Test 'users' service", () => {
 
 	describe("Test actions", () => {
 		const broker = new ServiceBroker({ logger: false });

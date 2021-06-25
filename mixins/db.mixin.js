@@ -43,6 +43,7 @@ module.exports = function(collection) {
 		async started() {
 			// Check the count of items in the DB. If it's empty,
 			// call the `seedDB` method of the service.
+			this.logger.info("********* Check seeding **************");
 			if (this.seedDB) {
 				const count = await this.adapter.count();
 				if (count == 0) {

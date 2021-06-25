@@ -1,9 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\data",
     "\\mixins",
-    "\\public",
     "\\services",
     "\\test",
     "\\test\\integration",
@@ -11,6 +9,6 @@
     "\\test\\unit\\mixins",
     "\\test\\unit\\services"
   ],
-  "SelectedNode": "\\test\\integration\\products.service.spec.js",
+  "SelectedNode": "\\services\\api.service.js",
   "PreviewInSolutionExplorer": false
 }

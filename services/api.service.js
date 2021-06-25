@@ -3,6 +3,8 @@
 const _ = require("lodash");
 const ApiGateway = require("moleculer-web");
 const { UnAuthorizedError } = ApiGateway.Errors;
+const fs = require("fs");
+const path = require("path");
 
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
@@ -20,7 +22,12 @@ module.exports = {
 		port: process.env.PORT || 3000,
 
 		// Exposed IP
-		ip: "0.0.0.0",
+		//ip: "0.0.0.0",
+
+		https: {
+			key: fs.readFileSync(path.join(__dirname, "key.pem")),
+			cert: fs.readFileSync(path.join(__dirname, "aiq.pem"))
+		},
 
 		// Global Express middlewares. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 		use: [],
@@ -40,7 +47,7 @@ module.exports = {
 				mergeParams: true,
 
 				// Enable authentication. Implement the logic into `authenticate` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authentication
-				authentication: false,
+				authentication: true,
 
 				// Enable authorization. Implement the logic into `authorize` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
 				authorization: true,
@@ -220,9 +227,10 @@ module.exports = {
 					this.logger.info(err);
 				}
 			}
-
+			// Required authorization and no user found
 			if (req.$action.auth == "required" && !user)
 				throw new UnAuthorizedError();
+			// Required authorization, user found and no authorization from profile
 		}
 
 	}

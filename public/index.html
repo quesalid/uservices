@@ -529,7 +529,7 @@
 						users: [
 							{ id: "list", action: "users.list", rest: "/api/users/", response: null, status: null, duration: null, afterResponse: response => !this.fields.productID && (this.fields.userdID = response.rows[0]._id) },
 
-							{ id: "create", action: "users.create", rest: "/api/users/", method: "POST", fields: [
+							{ id: "sigup", action: "users.sigup", rest: "/api/users/sigup", method: "POST", fields: [
 								{ field: "username", label: "User Name", type: "text", paramType: "body", model: "username" },
 								{ field: "email", label: "Email", type: "text", paramType: "body", model: "email" },
 								{ field: "password", label: "Password", type: "password", paramType: "body", model: "password" },
@@ -563,13 +563,21 @@
 								{ field: "id", label: "ID", type: "text", paramType: "url", model: "_id" }
 							], response: null, status: null, duration: null },
 
-							{ id: "login", action: "users.login", rest: "/api/users/login", method: "POST", fields: [
+							{ id: "sigin", action: "users.sigin", rest: "/api/users/sigin", method: "POST", fields: [
 								{ field: "email", label: "Email", type: "text", paramType: "body", model: "email" },
 								{ field: "password", label: "Password", type: "password", paramType: "body", model: "password" }
 							], response: null, status: null, duration: null
 							},
 							{
 								id: "me", action: "users.me", rest: "/api/user", method: "GET", fields: [
+								], response: null, status: null, duration: null
+							},
+							{
+								id: "logout", action: "users.logout", rest: "/api/logout", method: "GET", fields: [
+								], response: null, status: null, duration: null
+							},
+							{
+								id: "seed", action: "users.seed", rest: "/api/seed", method: "POST", fields: [
 								], response: null, status: null, duration: null
 							},
 						]
@@ -707,10 +715,11 @@
 							item.duration = Date.now() - startTime;
 							return res.json().then(json => {
 								item.response = json;
-								if (item.action == 'users.login') {
+								//if (item.action == 'users.sigin') {
+								if (json.user)
 									token = json.user.token
-									console.log(token)
-								}
+									//console.log(token)
+								//}
 								if (item.afterResponse)
 									return item.afterResponse(json);
 							});

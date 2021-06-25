@@ -22,6 +22,8 @@ module.exports = {
 		rest: "/",
 		/** Secret for JWT */
 		JWT_SECRET: process.env.JWT_SECRET || "jwt-conduit-secret",
+		/** Seed PW */
+		SEED_PW: process.env.SEED_PW || "rcvlrbnc",
 
 		/** Public fields */
 		fields: ["_id", "username", "email", "bio", "image"],
@@ -48,8 +50,8 @@ module.exports = {
 		 *
 		 * @returns {Object} Created entity & token
 		 */
-		create: {
-			rest: "POST /users",
+		signup: {
+			rest: "POST /users/sigup",
 			params: {
 				user: { type: "object" }
 			},
@@ -89,8 +91,8 @@ module.exports = {
 		 *
 		 * @returns {Object} Logged in user with token
 		 */
-		login: {
-			rest: "POST /users/login",
+		sigin: {
+			rest: "POST /users/signin",
 			params: {
 				user: {
 					type: "object", props: {
@@ -112,7 +114,33 @@ module.exports = {
 
 				// Transform user entity (remove password and all protected fields)
 				const doc = await this.transformDocuments(ctx, {}, user);
+				this.settings.JWT_SECRET+= password
 				return await this.transformEntity(doc, true, ctx.meta.token);
+			}
+		},
+
+		/**
+		 * Logou
+		 * Auth is required!
+		 *
+		 * @actions
+		 *
+		 * @returns {Object} User entity
+		 */
+		logout: {
+			auth: "required",
+			rest: "GET /logout",
+			cache: {
+				keys: ["#userID"]
+			},
+			async handler(ctx) {
+				const user = await this.getById(ctx.meta.user._id);
+				if (!user)
+					throw new MoleculerClientError("User not found!", 400);
+				
+				const doc = await this.transformDocuments(ctx, {}, user);
+				ctx.meta.token = ''
+				return await this.transformEntity(doc, false, ctx.meta.token);
 			}
 		},
 
@@ -136,7 +164,7 @@ module.exports = {
 				const decoded = await new this.Promise((resolve, reject) => {
 					jwt.verify(ctx.params.token, this.settings.JWT_SECRET, (err, decoded) => {
 						if (err)
-							return reject(err);
+							return reject('JWT VERIFY ERROR');
 
 						resolve(decoded);
 					});
@@ -237,6 +265,7 @@ module.exports = {
 		},
 
 		remove: {
+			auth: "required",
 			rest: "DELETE /users/:id"
 		},
 
@@ -316,6 +345,40 @@ module.exports = {
 				await ctx.call("follows.delete", { user: ctx.meta.user._id.toString(), follow: user._id.toString() });
 				const doc = await this.transformDocuments(ctx, {}, user);
 				return await this.transformProfile(ctx, doc, ctx.meta.user);
+			}
+		},
+		/**
+		 * Seed the db
+		 *
+		 * @actions
+		 *
+		 * @returns {Object} Current user entity
+		 */
+		seed: {
+			rest: "POST /seed",
+			async handler(ctx) {
+				const initial =  {
+					username: "admin",
+					password: this.settings.SEED_PW,
+					email: "admin@admin.com",
+					bio: "",
+					image: null,
+				}
+			// Check if admin is present
+				const found = await this.adapter.findOne({ username: initial.username });
+				if (found)
+					throw new MoleculerClientError("DB already seeded!", 422, "", [{ field: "username", message: "is existent" }]);
+
+				
+				initial.password = bcrypt.hashSync(initial.password, 10);
+				initial.bio = initial.bio || "";
+				initial.image = initial.image || null;
+				initial.createdAt = new Date();
+
+				const doc = await this.adapter.insert(initial);
+
+				return ("DB seeded")
+
 			}
 		}
 	},
